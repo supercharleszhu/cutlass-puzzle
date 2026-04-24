@@ -1,0 +1,28 @@
+build/
+build-*/
+*.o
+*.obj
+*.exe
+*.so
+*.dylib
+*.ptx
+*.cubin
+
+# IDE
+.vscode/
+.idea/
+.vs/
+*.swp
+*.swo
+.DS_Store
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Python (jupyter scratch, venvs, etc. in case)
+__pycache__/
+*.pyc
+.venv/
