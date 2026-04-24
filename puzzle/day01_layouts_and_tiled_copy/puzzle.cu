@@ -209,6 +209,18 @@ int main(int argc, char** argv)
 
   TiledCopy tiled_copy = make_tiled_copy(Atom{}, thr_layout, val_layout);
 
+  // These asserts enforce the pedagogical goal. They will fire until your
+  // thr_layout and val_layout together cover the (128, 64) block_shape AND
+  // each thread issues a 4-element (16-byte) vector.
+  static_assert(size(thr_layout) * size(val_layout) == size(block_shape),
+      "PUZZLE: thr_layout * val_layout must cover the whole block tile.");
+  static_assert(size(thr_layout) == 256,
+      "PUZZLE: target 256 threads per block (32 x 8).");
+  static_assert(size(val_layout) == 4,
+      "PUZZLE: target 4 values per thread (one 128-bit vector).");
+  static_assert(!std::is_same_v<CopyOp, AutoVectorizingCopy>,
+      "PUZZLE: use UniversalCopy<uint_byte_t<sizeof(Element)*size(val_layout)>>.");
+
   //
   // Determine grid and block dimensions
   //

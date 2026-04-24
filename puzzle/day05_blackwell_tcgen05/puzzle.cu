@@ -251,6 +251,8 @@ gemm_device(ATensor mA,                      // (Gemm_M, Gemm_K)
   // Placeholders so the rest of the file still compiles (values are wrong):
   uint32_t elect_one_thr  = 0;
   uint32_t elect_one_warp = 0;
+  using TmemAllocator = cute::TMEM::Allocator1Sm;  // used by the epilogue free()
+  TmemAllocator tmem_allocator{};
   // TODO: allocate TMEM and repoint tCtAcc.data() at shared_storage.tmem_base_ptr
 
   if (thread0()) {
