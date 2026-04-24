@@ -218,10 +218,17 @@ int main(int argc, char** argv)
   TiledCopy tiled_copy = make_tiled_copy(Atom{}, thr_layout, val_layout);
 
   // These asserts enforce the pedagogical goal. They will fire until your
-  // thr_layout and val_layout together cover the (128, 64) block_shape AND
-  // each thread issues a 4-element (16-byte) vector.
-  static_assert(size(thr_layout) * size(val_layout) == size(block_shape),
-      "PUZZLE: thr_layout * val_layout must cover the whole block tile.");
+  // thr_layout and val_layout form a micro-tile that evenly tiles the
+  // block_shape, with 256 threads and a 4-element (16-byte) vector per thread.
+  //
+  // Note: make_tiled_copy replicates the (thr * val) micro-tile over the
+  // block — it does NOT require thr*val == block. Here the micro-tile is
+  // (thr.M*val.M, thr.N*val.N) = (128, 8), which covers block (128, 64)
+  // in 1 pass along M and 8 passes along N.
+  static_assert(size<0>(block_shape) % (size<0>(thr_layout) * size<0>(val_layout)) == 0,
+      "PUZZLE: block_M must be divisible by thr_M * val_M.");
+  static_assert(size<1>(block_shape) % (size<1>(thr_layout) * size<1>(val_layout)) == 0,
+      "PUZZLE: block_N must be divisible by thr_N * val_N.");
   static_assert(size(thr_layout) == 256,
       "PUZZLE: target 256 threads per block (32 x 8).");
   static_assert(size(val_layout) == 4,
