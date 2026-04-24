@@ -164,6 +164,42 @@ Executables land in `build/puzzle/dayNN_xxx/` and `build/blog/`:
 ./build/puzzle/day01_layouts_and_tiled_copy/day01_solution  # for comparison
 ```
 
+## IntelliSense setup (VS Code)
+
+The CuTe templates are gnarly, and VS Code's IntelliSense will wail about
+unknown identifiers unless it knows where CUTLASS lives. The `.vscode/`
+directory is gitignored — populate your own:
+
+```bash
+mkdir -p .vscode && cat > .vscode/c_cpp_properties.json <<'EOF'
+{
+  "configurations": [{
+    "name": "Linux-CUDA",
+    "compilerPath": "/usr/local/cuda/bin/nvcc",
+    "cStandard": "c17",
+    "cppStandard": "c++17",
+    "intelliSenseMode": "linux-gcc-x64",
+    "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+    "includePath": [
+      "${workspaceFolder}/**",
+      "${workspaceFolder}/third_party/cutlass/include",
+      "${workspaceFolder}/third_party/cutlass/tools/util/include",
+      "/usr/local/cuda/include"
+    ],
+    "defines": ["__CUDACC__"],
+    "forcedInclude": ["/usr/local/cuda/include/cuda_runtime.h"]
+  }],
+  "version": 4
+}
+EOF
+```
+
+If your CUTLASS checkout lives outside the repo (e.g. you set `CUTLASS_DIR`
+rather than using the submodule), replace the two `third_party/cutlass/...`
+entries with your actual path. Pair this with `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
+in your CMake invocation so IntelliSense uses the actual `nvcc` flags the
+build uses.
+
 ## How to use this repo
 
 1. Open the day's `README.md` and skim the task.

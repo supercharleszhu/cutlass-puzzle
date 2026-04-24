@@ -150,6 +150,14 @@ int main(int argc, char** argv)
   //
   // Make tensors
   //
+  // NOTE: make_tensor() does NOT copy data. It's a zero-cost view — a lightweight
+  // wrapper pairing an existing pointer with layout metadata. No allocation, no
+  // bytes move. Mutating tensor_S(i, j) mutates the d_S buffer directly.
+  // Analogy: std::span, not std::vector.
+  //
+  // make_gmem_ptr / make_smem_ptr / make_rmem_ptr are also free — they just tag
+  // the raw pointer with a memory-space type so CuTe can later emit the right
+  // ld.global / ld.shared / register-file load instruction.
 
   Tensor tensor_S = make_tensor(make_gmem_ptr(thrust::raw_pointer_cast(d_S.data())), make_layout(tensor_shape));
   Tensor tensor_D = make_tensor(make_gmem_ptr(thrust::raw_pointer_cast(d_D.data())), make_layout(tensor_shape));
