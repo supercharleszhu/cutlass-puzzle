@@ -5,9 +5,16 @@
 A hands-on companion to the blog post [*CUTLASS Deep Dive: From CuTe Layouts to
 Blackwell tcgen05*](https://supercharleszhu.github.io). Every concept in the
 post is re-packaged here as a compilable mini-program with the critical
-block replaced by `// TODO:` — your job is to fill it in.
+block replaced by `// TODO:` (C++) or `# TODO:` (Python DSL) — your job is to
+fill it in.
+
+Days **1–9** cover the **CuTe C++** track (CUTLASS templates, raw CUDA).
+Days **10–14** cover the **CuTe Python DSL** track — same algebra, JIT-compiled
+from Python — using the `nvidia-cutlass-dsl` package and PyTorch for tensor
+allocation and verification.
 
 ```
+─── CuTe C++ track ──────────────────────────────────────────────────────────
 ┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐
 │  Day 1: Layouts    │ ─► │  Day 2: SM80 GEMM  │ ─► │  Day 3: WGMMA      │
 └────────────────────┘    └────────────────────┘    └────────────────────┘
@@ -26,6 +33,16 @@ block replaced by `// TODO:` — your job is to fill it in.
                                                     ┌────────────────────┐
                                                     │ Day 9: TMA Epilog  │
                                                     └────────────────────┘
+
+─── CuTe Python DSL track ───────────────────────────────────────────────────
+┌────────────────────┐    ┌────────────────────┐    ┌────────────────────┐
+│ Day 10: Hello DSL  │ ─► │ Day 11: Layouts py │ ─► │ Day 12: Elemwise   │
+└────────────────────┘    └────────────────────┘    └────────────────────┘
+                                                            │
+                                                            ▼
+                                  ┌────────────────────┐    ┌────────────────────┐
+                                  │ Day 14: SIMT GEMM  │ ◄─ │ Day 13: TV + pred  │
+                                  └────────────────────┘    └────────────────────┘
 ```
 
 ## Why
@@ -65,7 +82,17 @@ cutlass-puzzle/
     ├── day06_blackwell_tma_load/
     ├── day07_blackwell_tma_multicast/
     ├── day08_blackwell_2sm_mma/
-    └── day09_blackwell_tma_epilogue/
+    ├── day09_blackwell_tma_epilogue/
+    ├── day10_cute_dsl_hello_world/          ← CuTe Python DSL track starts
+    │   ├── puzzle.py                        ← TODOs to fill in (CLI)
+    │   ├── solution.py                      ← reference answer (CLI)
+    │   ├── day10.ipynb                      ← same content as a notebook
+    │   └── README.md
+    ├── day11_cute_dsl_layouts/
+    ├── day12_cute_dsl_elementwise/
+    ├── day13_cute_dsl_tv_layout_predicated/
+    ├── day14_cute_dsl_simt_gemm/
+    └── requirements-dsl.txt                 ← Python deps for days 10–14
 ```
 
 ## The puzzles
@@ -81,9 +108,23 @@ cutlass-puzzle/
 | 7   | Blackwell TMA multicast                  | B200 (sm_100a)  | 1h   |
 | 8   | Blackwell 2SM MMA (256×256)              | B200 (sm_100a)  | 1h   |
 | 9   | Blackwell TMA epilogue                   | B200 (sm_100a)  | 1h   |
+| 10  | **CuTe DSL** hello world + thread idx    | A100 (sm_80+)   | 15m  |
+| 11  | **CuTe DSL** layout algebra (no kernel)  | A100 (sm_80+)   | 30m  |
+| 12  | **CuTe DSL** elementwise add (naive→vec) | A100 (sm_80+)   | 30m  |
+| 13  | **CuTe DSL** TV layout + OOB predication | A100 (sm_80+)   | 1h   |
+| 14  | **CuTe DSL** single-stage SIMT GEMM      | A100 (sm_80+)   | 1h   |
 
-No hardware? The code still *compiles* with `nvcc -arch=sm_90a` / `sm_100a`
-and you can verify your solution with `diff` against `solution.cu`.
+> **DSL hardware tiers.** Days 10–14 are pegged to the **sm_80+ baseline** —
+> `cp.async` + universal-FMA MMA — so they run unchanged on A100, H100, and
+> B200. They do **not** depend on Hopper WGMMA or Blackwell tcgen05. If we
+> add later days that exercise Hopper- or Blackwell-specific DSL primitives
+> (WGMMA, TMA, tcgen05), those will be explicitly marked with their tier.
+
+No hardware? Days 1–9 still *compile* with `nvcc -arch=sm_90a` / `sm_100a`
+and you can verify your solution with `diff` against `solution.cu`. Days 10–14
+require a working CUDA device because the DSL JIT-compiles and launches on the
+fly — but any **sm_80 or newer** GPU is sufficient. The DSL itself does not
+support sm_75 (Turing) or older.
 
 ## Dependencies
 
@@ -100,6 +141,19 @@ and you can verify your solution with `diff` against `solution.cu`.
 A hint about CUTLASS versions: the Blackwell tutorials (days 5–9) require a
 CUTLASS release that includes `cute/arch/tmem_allocator_sm100.hpp` — this
 landed in CUTLASS 3.6 and has been iterated on through 4.x.
+
+### CuTe DSL deps (days 10–14)
+
+The Python track is a separate dependency set — no CMake, no CUTLASS submodule.
+
+| Dep                     | Version          | Notes                                          |
+|-------------------------|------------------|------------------------------------------------|
+| Python                  | 3.10+            |                                                |
+| GPU                     | **sm_80+**       | A100 / H100 / B200 / RTX 30xx-50xx all fine. DSL does *not* support sm_75 (Turing) or older. |
+| `nvidia-cutlass-dsl`    | **4.2+**         | The CuTe Python DSL package. *Not* the same as `nvidia-cutlass` (C++ bindings). |
+| `cuda-python`           | `<13` on driver < 580; `>=13` on driver ≥ 580 | Must match driver version. See `puzzle/requirements-dsl.txt`. |
+| `torch`                 | CUDA build       | For tensor allocation and verification. Install with the matching CUDA index URL. |
+| `numpy`                 | ≥ 1.24           |                                                |
 
 ## Setup
 
@@ -152,6 +206,55 @@ cmake --build build --target puzzle_all
 # All blog reference files
 cmake --build build --target blog_all
 ```
+
+### CuTe DSL setup (days 10–14)
+
+The Python track has no CMake step — just pip install and run:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+
+# CUDA-12.4 PyTorch wheels — pick cu128 if you're on a B200 / driver 570+:
+pip install --extra-index-url https://download.pytorch.org/whl/cu124 torch
+
+# CuTe DSL + cuda-python + numpy:
+pip install -r puzzle/requirements-dsl.txt
+```
+
+Each day is available in two equivalent forms — pick your preferred style:
+
+**CLI scripts** (good for `python puzzle.py` workflows and CI):
+
+```bash
+python puzzle/day10_cute_dsl_hello_world/puzzle.py    # raises NotImplementedError
+# fix the TODOs
+python puzzle/day10_cute_dsl_hello_world/puzzle.py    # "Success."
+python puzzle/day10_cute_dsl_hello_world/solution.py  # reference
+```
+
+**Jupyter notebooks** (good for inspecting `cute.printf` / `cute.print_tensor`
+output inline, matches the official CuTe DSL tutorial style):
+
+```bash
+# In addition to the deps above:
+pip install jupyter nbconvert ipykernel
+
+# Run interactively:
+jupyter notebook puzzle/day10_cute_dsl_hello_world/day10.ipynb
+
+# Or execute headlessly (useful for CI):
+jupyter nbconvert --to notebook --execute \
+    puzzle/day10_cute_dsl_hello_world/day10.ipynb --output _executed.ipynb
+```
+
+Each notebook is structured: intro → background → setup → puzzle cells
+(`raise NotImplementedError` until you fix them) → **reference solution**
+section at the bottom. Run cells top-to-bottom, edit the TODO cells inline,
+and re-run.
+
+The DSL JIT-compiles on first call, so expect 5–15 s of compile time per
+first run; subsequent runs hit the JIT cache.
 
 ### 4. Run
 
@@ -222,11 +325,21 @@ non-negotiable. WGMMA + TMA producer-consumer is the mental model.
 **If you want to write production Blackwell kernels:** days 5 → 9, in order.
 Each one introduces exactly one new primitive; don't skip ahead.
 
+**If you want to prototype kernels in Python instead of templated C++:**
+days 10 → 14. You get the same Layout/Tensor algebra but as a JIT'd Python
+DSL with `cute.printf`, `cute.print_tensor` and Python-level autotuning. Day
+14's `solution.py` corresponds roughly to day 2's `solution.cu` — read them
+side-by-side to see the same algorithm expressed in both languages.
+
 ## References
 
 - [NVIDIA/cutlass](https://github.com/NVIDIA/cutlass) — the upstream library.
   All puzzle source is derived from `examples/cute/tutorial/`.
 - [CuTe documentation](https://github.com/NVIDIA/cutlass/tree/main/media/docs/cpp/cute).
+- [CuTe Python DSL documentation](https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl.html).
+- [Official CuTe DSL examples](https://github.com/NVIDIA/cutlass/tree/main/examples/python/CuTeDSL)
+  — `notebooks/` is the gentlest intro; `ampere/elementwise_add.py` and
+  `ampere/sgemm.py` are the references for days 12–14.
 - [Hopper architecture whitepaper](https://resources.nvidia.com/en-us-tensor-core).
 - [Blackwell architecture whitepaper](https://resources.nvidia.com/en-us-blackwell-architecture).
 - Blog post: [*CUTLASS Deep Dive*](https://supercharleszhu.github.io).
