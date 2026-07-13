@@ -170,3 +170,56 @@ void sgemm_cutlass_hopper_autotune_bf16(
     const torch::Tensor &matrix_b,
     torch::Tensor &output_matrix);
 
+// SGEMM with CUTLASS library - Hopper architecture (SM90) fast.cu-inspired steps
+// Input: BF16 only, Output: BF16
+void sgemm_cutlass_hopper_fastcu_tma_wgmma_bf16(
+    const torch::Tensor &matrix_a,
+    const torch::Tensor &matrix_b,
+    torch::Tensor &output_matrix);
+
+void sgemm_fastcu_matmul2_manual_tma_wgmma_bf16(
+    const torch::Tensor &matrix_a,
+    const torch::Tensor &matrix_b_transposed,
+    torch::Tensor &output_matrix_transposed);
+
+void sgemm_cutlass_hopper_fastcu_big_tile_bf16(
+    const torch::Tensor &matrix_a,
+    const torch::Tensor &matrix_b,
+    torch::Tensor &output_matrix);
+
+void sgemm_cutlass_hopper_fastcu_persistent_bf16(
+    const torch::Tensor &matrix_a,
+    const torch::Tensor &matrix_b,
+    torch::Tensor &output_matrix);
+
+void sgemm_cutlass_hopper_fastcu_cluster_bf16(
+    const torch::Tensor &matrix_a,
+    const torch::Tensor &matrix_b,
+    torch::Tensor &output_matrix);
+
+// Handwritten fast.cu-derived Hopper kernel.
+// Expects B^T and writes C^T because the upstream kernel uses column-major B/C views.
+void sgemm_fastcu_handwritten_tma_wgmma_bf16(
+    const torch::Tensor &matrix_a,
+    const torch::Tensor &matrix_b_transposed,
+    torch::Tensor &output_matrix_transposed);
+
+void sgemm_fastcu_handwritten_cached_tma_maps_bf16(
+    const torch::Tensor &matrix_a,
+    const torch::Tensor &matrix_b_transposed,
+    torch::Tensor &output_matrix_transposed);
+
+void sgemm_fastcu_final_bf16(
+    const torch::Tensor &matrix_a,
+    const torch::Tensor &matrix_b_transposed,
+    torch::Tensor &output_matrix_transposed);
+
+void sgemm_fastcu_tma_store_bf16(
+    const torch::Tensor &matrix_a,
+    const torch::Tensor &matrix_b_transposed,
+    torch::Tensor &output_matrix_transposed);
+
+void sgemm_fastcu_hilbert_final_bf16(
+    const torch::Tensor &matrix_a,
+    const torch::Tensor &matrix_b_transposed,
+    torch::Tensor &output_matrix_transposed);

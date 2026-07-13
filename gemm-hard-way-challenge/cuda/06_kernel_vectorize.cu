@@ -84,12 +84,14 @@ __global__ void sgemm_vectorize_kernel(int num_rows_a, int num_cols_b, int num_c
             // Load TM elements from tile_a (transposed layout)
             #pragma unroll
             for (uint i = 0; i < TM; ++i) {
+                // BLANK A: load A from the vectorized/transposed shared-memory layout.
                 register_m[i] = GEMM_TODO_FLOAT("Day06: load A from transposed shared layout");
             }
 
             // Load TN elements from tile_b
             #pragma unroll
             for (uint i = 0; i < TN; ++i) {
+                // BLANK B: load B from the vectorized shared-memory layout.
                 register_n[i] = GEMM_TODO_FLOAT("Day06: load B from shared layout");
             }
 

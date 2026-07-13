@@ -188,6 +188,7 @@ sgemm_tensorcore_async_kernel(int num_rows_a, int num_cols_b, int num_cols_a,
                 nvcuda::wmma::load_matrix_sync(a_frag, a_tile_ptr, BK);
                 nvcuda::wmma::load_matrix_sync(b_frag, b_tile_ptr, BK);
 
+                // BLANK A: issue the WMMA compute stage of the async pipeline.
                 GEMM_TODO_WMMA_MMA("Day12: async-pipeline WMMA compute");
             }
         }

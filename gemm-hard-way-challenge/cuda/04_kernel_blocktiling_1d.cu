@@ -57,6 +57,7 @@ __global__ void sgemm_blocktiling_1d_kernel(int num_rows_a, int num_cols_b, int 
         const uint a_col = threadIdx.x % BK;
         if ((block_row * BM + a_row) < num_rows_a && (tile_idx + a_col) < num_cols_a)
         {
+            // BLANK A: load one A tile element into shared memory.
             tile_a[a_row * BK + a_col] = GEMM_TODO_FLOAT("Day04: load A tile element");
         }
         else
@@ -70,6 +71,7 @@ __global__ void sgemm_blocktiling_1d_kernel(int num_rows_a, int num_cols_b, int 
         const uint b_col = threadIdx.x % BN;
         if ((tile_idx + b_row) < num_cols_a && (block_col * BN + b_col) < num_cols_b)
         {
+            // BLANK B: load one B tile element into shared memory.
             tile_b[b_row * BN + b_col] = GEMM_TODO_FLOAT("Day04: load B tile element");
         }
         else
@@ -88,6 +90,7 @@ __global__ void sgemm_blocktiling_1d_kernel(int num_rows_a, int num_cols_b, int 
         {
             // We make the dotproduct loop the outside loop, which facilitates
             // reuse of the tile_b entry, which we can cache in a tmp var.
+            // BLANK C: cache the B value reused by this thread's TM outputs.
             float b_tmp = GEMM_TODO_FLOAT("Day04: cache one B value in a register");
             for (uint res_idx = 0; res_idx < TM; ++res_idx)
             {

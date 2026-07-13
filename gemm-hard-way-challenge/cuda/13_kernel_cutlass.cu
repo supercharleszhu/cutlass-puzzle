@@ -33,6 +33,7 @@ using LayoutB = cutlass::layout::RowMajor;
 using LayoutC = cutlass::layout::RowMajor;
 
 // Tile shapes
+// BLANK A: choose the CUTLASS CTA tile shape as GemmShape<BM, BN, BK>.
 using ThreadBlockShape = cutlass::gemm::GemmShape<GEMM_TODO_INT("Day13: Threadblock M"), GEMM_TODO_INT("Day13: Threadblock N"), GEMM_TODO_INT("Day13: Threadblock K")>; // BM, BN, BK
 using WarpShape = cutlass::gemm::GemmShape<64, 64, 32>; // WM, WN, WK
 using InstructionShape = cutlass::gemm::GemmShape<16, 8, 16>; // Tensor Core shape

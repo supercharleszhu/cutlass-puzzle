@@ -10,10 +10,10 @@ Usage:
 
 Options:
   --namespace NS       Kubernetes namespace. Default: $GEMM_NS or kk-flyte-adhoc
-  --pod POD            Pod name. Default: $GEMM_POD or fcfd13ebf3b654511bbb-n0-0
+  --pod POD            Pod name. Default: $GEMM_POD or a5fwvrxdqp6kcb4xfj5d-n0-0
   --remote-dir DIR     Remote directory. Default: $GEMM_REMOTE_DIR or /tmp/gemm-hard-way-challenge
   --container NAME     Optional container name for multi-container pods.
-  --with-cutlass       Also upload CUTLASS headers for days 13-14.
+  --with-cutlass       Also upload CUTLASS headers for days 13-26.
   --cutlass-dir DIR    CUTLASS checkout. Default: $CUTLASS_DIR, ./cutlass, ../LeetCUDA/cutlass.
   -h, --help           Show this help.
 
@@ -26,7 +26,7 @@ EOF
 challenge_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 namespace="${GEMM_NS:-kk-flyte-adhoc}"
-pod="${GEMM_POD:-fcfd13ebf3b654511bbb-n0-0}"
+pod="${GEMM_POD:-a5fwvrxdqp6kcb4xfj5d-n0-0}"
 remote_dir="${GEMM_REMOTE_DIR:-/tmp/gemm-hard-way-challenge}"
 container=""
 with_cutlass=0
@@ -88,6 +88,7 @@ tar -C "$challenge_dir" \
   --exclude='.git' \
   --exclude='**/__pycache__' \
   --exclude='**/build' \
+  --exclude='result' \
   -cf - . | \
   kubectl "${kubectl_args[@]}" exec -i "$pod" -- \
     bash -lc "rm -rf '$remote_dir' && mkdir -p '$remote_dir' && tar -C '$remote_dir' -xf -"
@@ -110,7 +111,7 @@ if [[ "$with_cutlass" -eq 1 ]]; then
     exit 1
   fi
 
-  echo "Uploading CUTLASS headers for days 13-14 from $cutlass_dir"
+  echo "Uploading CUTLASS headers for days 13-26 from $cutlass_dir"
   kubectl "${kubectl_args[@]}" exec "$pod" -- \
     bash -lc "mkdir -p '$remote_dir/solutions/third-party/cutlass'"
   tar -cf - -C "$cutlass_dir" include -C "$cutlass_dir/tools/util" include | \

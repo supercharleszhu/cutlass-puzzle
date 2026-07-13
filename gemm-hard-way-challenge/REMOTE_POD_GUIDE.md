@@ -6,7 +6,7 @@ Current dev pod, subject to change:
 
 ```bash
 export GEMM_NS=kk-flyte-adhoc
-export GEMM_POD=fcfd13ebf3b654511bbb-n0-0
+export GEMM_POD=a5fwvrxdqp6kcb4xfj5d-n0-0
 export GEMM_REMOTE_DIR=/tmp/gemm-hard-way-challenge
 ```
 
@@ -36,7 +36,7 @@ Preferred executable helper:
 ```bash
 cd gemm-hard-way-challenge
 scripts/upload_to_pod.sh
-scripts/upload_to_pod.sh --with-cutlass   # needed for solution days 13-14
+scripts/upload_to_pod.sh --with-cutlass   # needed for solution days 13-26
 ```
 
 From the `cutlass-puzzle` repo root:
@@ -131,7 +131,7 @@ kubectl -n "$GEMM_NS" exec "$GEMM_POD" -- bash -lc "
 "
 ```
 
-CUTLASS solution files 13-14 require CUTLASS headers. If the pod has a full LeetCUDA checkout with `./cutlass`, run from that checkout or set `CUTLASS_DIR`, then add `--include-cutlass`.
+CUTLASS solution files 13-26 require CUTLASS headers. If the pod has a full LeetCUDA checkout with `./cutlass`, run from that checkout or set `CUTLASS_DIR`, then add `--include-cutlass`. Days 15-26 additionally require Hopper/SM90+ and build with `sm_90a`.
 
 ## 5. Exercise correctness run
 
@@ -154,7 +154,7 @@ Use the `max error` column as the first gate. Suggested tolerances:
 | --- | ---: |
 | FP32 | `1e-3` to `1e-4` for small sizes |
 | FP16 | `1e-2` to `1e-1` depending on accumulation/output |
-| BF16 | `1e-1` is a reasonable first smoke-test tolerance |
+| BF16 | `1e0` is a reasonable first smoke-test tolerance for larger Hopper BF16 runs |
 
 If correctness fails, do not benchmark yet. Debug the first size that fails.
 
@@ -245,6 +245,7 @@ Useful metrics to inspect after each day:
 | 4-7 | Reduced shared-memory pressure, register use, occupancy, and stall reasons. |
 | 8-12 | Tensor Core instruction presence, e.g. `HMMA`/`MMA`, plus pipeline stalls. |
 | 13-14 | CUTLASS tile shape, stages, swizzle/scheduler effects, and achieved TFLOPS. |
+| 15-26 | Hopper BF16 TMA/Stream-K/fast.cu-inspired schedule choices, handwritten matmul_2 TMA/WGMMA, TMA store/Hilbert scheduling, `sm_90a` compile behavior, and achieved TFLOPS on H100. |
 
 ## 8. Interactive debugging shell
 

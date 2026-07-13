@@ -102,8 +102,8 @@ __device__ void process_warp_tile(InputType *register_m, InputType *register_n, 
                     {
                         thread_results[(wsub_row_idx * TM + res_idx_m) * (WNITER * TN) +
                                        (wsub_col_idx * TN) + res_idx_n] +=
-                            to_float(register_m[wsub_row_idx * TM + res_idx_m]) *
-                            to_float(register_n[wsub_col_idx * TN + res_idx_n]);
+                            // BLANK A: convert dtype-specific register fragments to float before accumulating.
+                            GEMM_TODO_FLOAT("Day08: dtype-aware FP32 accumulation");
                     }
                 }
             }

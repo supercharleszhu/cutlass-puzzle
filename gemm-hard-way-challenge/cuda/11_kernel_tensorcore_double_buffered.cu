@@ -92,6 +92,7 @@ sgemm_tensorcore_double_buffered_kernel(int num_rows_a, int num_cols_b, int num_
     constexpr int NUM_THREADS = BLOCK_ROW_WARPS * BLOCK_COL_WARPS * 32;
 
     // Double buffering control: which buffer is currently being computed on
+    // BLANK A: start by computing from the buffer populated in the prologue.
     int read_buffer = GEMM_TODO_INT("Day11: choose initial read buffer");
 
     // ===== Prologue: Load the first tile into buffer 0 =====
@@ -124,6 +125,7 @@ sgemm_tensorcore_double_buffered_kernel(int num_rows_a, int num_cols_b, int num_
     for (int block_k_idx = 0; block_k_idx < num_cols_a; block_k_idx += BK)
     {
         // Determine which buffer to write next tile into
+        // BLANK B: choose the other buffer for the next prefetch.
         int write_buffer = GEMM_TODO_INT("Day11: choose opposite write buffer"); // Toggle between 0 and 1
 
         // ===== Prefetch next tile into write_buffer (if not last iteration) =====
@@ -173,6 +175,7 @@ sgemm_tensorcore_double_buffered_kernel(int num_rows_a, int num_cols_b, int num_
                 nvcuda::wmma::load_matrix_sync(a_frag, a_tile_ptr, BK);
                 nvcuda::wmma::load_matrix_sync(b_frag, b_tile_ptr, BK);
 
+                // BLANK C: compute from read_buffer while write_buffer is being prefetched.
                 GEMM_TODO_WMMA_MMA("Day11: compute current buffer while next buffer is prefetched");
             }
         }
@@ -181,6 +184,7 @@ sgemm_tensorcore_double_buffered_kernel(int num_rows_a, int num_cols_b, int num_
         __syncthreads();
 
         // Switch to the newly loaded buffer for next iteration
+        // BLANK D: flip read_buffer after the current compute step.
         read_buffer = GEMM_TODO_INT("Day11: flip read/write buffers");
 
     } // End of K-loop: accumulation complete in acc_frag

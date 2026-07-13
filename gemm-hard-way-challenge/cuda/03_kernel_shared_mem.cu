@@ -53,6 +53,7 @@ __global__ void sgemm_shared_mem_kernel(int num_rows_a, int num_cols_b, int num_
         // thread_col is consecutive for coalesced memory access
         if (global_row < num_rows_a && (tile_idx + thread_col) < num_cols_a)
         {
+            // BLANK A: cooperatively load A[row, tile_k] into shared memory.
             tile_a[thread_row * block_size + thread_col] =
                 GEMM_TODO_FLOAT("Day03: load A tile from global memory");
         }
@@ -65,6 +66,7 @@ __global__ void sgemm_shared_mem_kernel(int num_rows_a, int num_cols_b, int num_
         // thread_col is consecutive for coalesced memory access
         if ((tile_idx + thread_row) < num_cols_a && global_col < num_cols_b)
         {
+            // BLANK B: cooperatively load B[tile_k, col] into shared memory.
             tile_b[thread_row * block_size + thread_col] =
                 GEMM_TODO_FLOAT("Day03: load B tile from global memory");
         }
@@ -83,6 +85,7 @@ __global__ void sgemm_shared_mem_kernel(int num_rows_a, int num_cols_b, int num_
         // Compute partial dot product using shared memory
         for (int dot_idx = 0; dot_idx < block_size; ++dot_idx)
         {
+            // BLANK C: consume the shared-memory A/B tile values after __syncthreads().
             accumulator += GEMM_TODO_FLOAT("Day03: multiply shared-memory A/B tile values");
         }
 

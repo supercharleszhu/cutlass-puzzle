@@ -147,6 +147,7 @@ struct GemmConfigEntry
 
 // TODO(student): extend, prune, and benchmark this candidate set.
 constexpr GemmConfigEntry kConfigs[] = {
+    // BLANK A: seed the first autotune candidate's CTA tile shape.
     {GEMM_TODO_INT("Day14: BM"), GEMM_TODO_INT("Day14: BN"), GEMM_TODO_INT("Day14: BK"), 64, 64, 64, 16, 8, 16, 3},
     {64, 256, 32, 32, 64, 32, 16, 8, 16, 4},
     {128, 128, 32, 64, 64, 32, 16, 8, 16, 4},

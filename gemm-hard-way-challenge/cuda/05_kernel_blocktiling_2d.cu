@@ -52,6 +52,7 @@ __global__ void sgemm_blocktiling_2d_kernel(int num_rows_a, int num_cols_b, int 
             uint load_idx = threadIdx.x + load_offset;
             uint a_row = load_idx / BK;
             uint a_col = load_idx % BK;
+            // BLANK A: load the A tile element assigned to this thread.
             tile_a[load_idx] = GEMM_TODO_FLOAT("Day05: load A tile element");
         }
 
@@ -61,6 +62,7 @@ __global__ void sgemm_blocktiling_2d_kernel(int num_rows_a, int num_cols_b, int 
             uint load_idx = threadIdx.x + load_offset;
             uint b_row = load_idx / BN;
             uint b_col = load_idx % BN;
+            // BLANK B: load the B tile element assigned to this thread.
             tile_b[load_idx] = GEMM_TODO_FLOAT("Day05: load B tile element");
         }
 
@@ -73,11 +75,13 @@ __global__ void sgemm_blocktiling_2d_kernel(int num_rows_a, int num_cols_b, int 
         {
             for (uint i = 0; i < TM; ++i)
             {
+                // BLANK C: load this thread's A register fragment.
                 register_m[i] = GEMM_TODO_FLOAT("Day05: load A register fragment");
             }
 
             for (uint i = 0; i < TN; ++i)
             {
+                // BLANK D: load this thread's B register fragment.
                 register_n[i] = GEMM_TODO_FLOAT("Day05: load B register fragment");
             }
 
@@ -170,11 +174,13 @@ __global__ void sgemm_blocktiling_2d_edge_kernel(int num_rows_a, int num_cols_b,
         {
             for (uint i = 0; i < TM; ++i)
             {
+                // BLANK C: reload this thread's A register fragment for the next K tile.
                 register_m[i] = GEMM_TODO_FLOAT("Day05: load A register fragment");
             }
 
             for (uint i = 0; i < TN; ++i)
             {
+                // BLANK D: reload this thread's B register fragment for the next K tile.
                 register_n[i] = GEMM_TODO_FLOAT("Day05: load B register fragment");
             }
 

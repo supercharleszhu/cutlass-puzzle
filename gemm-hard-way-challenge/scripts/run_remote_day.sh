@@ -13,16 +13,17 @@ Usage:
   scripts/run_remote_day.sh --all [options]
 
 Options:
-  --day DAY           Day number: 1..14.
+  --day DAY           Day number: 1..26.
   --all               Run all available day groups.
   --namespace NS      Kubernetes namespace. Default: $GEMM_NS or kk-flyte-adhoc
-  --pod POD           Pod name. Default: $GEMM_POD or fcfd13ebf3b654511bbb-n0-0
+  --pod POD           Pod name. Default: $GEMM_POD or a5fwvrxdqp6kcb4xfj5d-n0-0
   --remote-dir DIR    Remote directory. Default: $GEMM_REMOTE_DIR or /tmp/gemm-hard-way-challenge
   --container NAME    Optional container name for multi-container pods.
   --sizes "S..."      Space-separated matrix sizes. Default depends on dtype/day.
-  --warmup N          Warmup iterations. Default: 5
-  --iters N           Benchmark iterations. Default: 20
-  --include-cutlass   Include CUTLASS days 13-14. Requires uploaded CUTLASS headers.
+  --warmup N          Warmup iterations. Default: 10
+  --iters N           Benchmark iterations. Default: 100
+  --runs N            Repeat each benchmark size N times. Default: 5
+  --include-cutlass   Include CUTLASS days 13-26. Requires uploaded CUTLASS headers.
   --profile           Also run Nsight Compute on the selected kernel/day.
   --profile-set SET   Nsight Compute section set. Default: roofline
   -h, --help          Show this help.
@@ -36,12 +37,13 @@ EOF
 }
 
 namespace="${GEMM_NS:-kk-flyte-adhoc}"
-pod="${GEMM_POD:-fcfd13ebf3b654511bbb-n0-0}"
+pod="${GEMM_POD:-a5fwvrxdqp6kcb4xfj5d-n0-0}"
 remote_dir="${GEMM_REMOTE_DIR:-/tmp/gemm-hard-way-challenge}"
 container=""
 sizes=""
-warmup=5
-iters=20
+warmup=10
+iters=100
+runs=5
 include_cutlass=0
 profile=0
 profile_set="roofline"
@@ -86,6 +88,10 @@ while [[ $# -gt 0 ]]; do
       iters="$2"
       shift 2
       ;;
+    --runs)
+      runs="$2"
+      shift 2
+      ;;
     --include-cutlass)
       include_cutlass=1
       shift
@@ -113,7 +119,7 @@ done
 if [[ "$all" -eq 1 ]]; then
   days=(1 2 3 4 5 6 7 8 9 10 11 12)
   if [[ "$include_cutlass" -eq 1 ]]; then
-    days+=(13 14)
+    days+=(13 14 15 16 17 18 19 20 21 22 23 24 25 26)
   fi
 fi
 
@@ -144,6 +150,18 @@ kernel_for_day() {
     12) echo "float16:12_tensorcore_async_fp16" ;;
     13) echo "float32:13_cutlass_fp32" ;;
     14) echo "float16:14_cutlass_autotune_fp16_cfg0" ;;
+    15) echo "bfloat16:15_cutlass_hopper_bf16" ;;
+    16) echo "bfloat16:16_cutlass_hopper_autotune_bf16_cfg0" ;;
+    17) echo "bfloat16:17_hopper_fastcu_tma_wgmma_bf16" ;;
+    18) echo "bfloat16:18_fastcu_matmul2_manual_tma_wgmma_bf16" ;;
+    19) echo "bfloat16:19_hopper_fastcu_big_tile_bf16" ;;
+    20) echo "bfloat16:20_hopper_fastcu_persistent_bf16" ;;
+    21) echo "bfloat16:21_hopper_fastcu_cluster_bf16" ;;
+    22) echo "bfloat16:22_fastcu_handwritten_tma_wgmma_bf16" ;;
+    23) echo "bfloat16:23_fastcu_cached_tma_maps_bf16" ;;
+    24) echo "bfloat16:24_fastcu_final_bf16" ;;
+    25) echo "bfloat16:25_fastcu_tma_store_bf16" ;;
+    26) echo "bfloat16:26_fastcu_hilbert_final_bf16" ;;
     *)
       echo "Unsupported day: $1" >&2
       return 1
@@ -151,8 +169,14 @@ kernel_for_day() {
   esac
 }
 
-default_sizes_for_dtype() {
-  case "$1" in
+default_sizes_for_day() {
+  local day="$1"
+  local dtype="$2"
+  if [[ "$day" -ge 15 ]]; then
+    echo "1024 2048 4096"
+    return
+  fi
+  case "$dtype" in
     float32) echo "128 256" ;;
     float16|bfloat16) echo "128 256" ;;
     *) echo "128" ;;
@@ -166,7 +190,7 @@ for day in "${days[@]}"; do
   spec="$(kernel_for_day "$day")"
   dtype="${spec%%:*}"
   kernel="${spec#*:}"
-  run_sizes="${sizes:-$(default_sizes_for_dtype "$dtype")}"
+  run_sizes="${sizes:-$(default_sizes_for_day "$day" "$dtype")}"
 
   cutlass_arg=""
   if [[ "$day" -ge 13 ]]; then
@@ -191,7 +215,8 @@ for day in "${days[@]}"; do
       --kernels torch \
       --kernels $kernel \
       --warmup $warmup \
-      --iters $iters
+      --iters $iters \
+      --runs $runs
   "
 
   if [[ "$profile" -eq 1 ]]; then
@@ -217,4 +242,3 @@ for day in "${days[@]}"; do
     echo "  kubectl -n '$namespace' cp '$pod:$report.ncu-rep' ./$(basename "$report").ncu-rep"
   fi
 done
-

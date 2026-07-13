@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import torch
 from torch.utils.cpp_extension import load_inline
 
 
@@ -26,6 +27,21 @@ CUDA_FILES_BASE = [
 CUDA_FILES_CUTLASS = [
     "13_kernel_cutlass.cu",
     "14_kernel_cutlass_autotunable.cu",
+]
+
+CUDA_FILES_HOPPER = [
+    "15_kernel_cutlass_hopper.cu",
+    "16_kernel_cutlass_hopper_autotunable.cu",
+    "17_kernel_hopper_tma_wgmma.cu",
+    "18_kernel_fastcu_matmul2_manual_tma_wgmma.cu",
+    "19_kernel_hopper_fastcu_big_tile.cu",
+    "20_kernel_hopper_fastcu_persistent.cu",
+    "21_kernel_hopper_fastcu_cluster.cu",
+    "22_kernel_fastcu_handwritten_tma_wgmma.cu",
+    "23_kernel_fastcu_cached_tma_maps.cu",
+    "24_kernel_fastcu_final.cu",
+    "25_kernel_fastcu_tma_store.cu",
+    "26_kernel_fastcu_hilbert_final.cu",
 ]
 
 FUNCTIONS_BASE = [
@@ -55,6 +71,27 @@ FUNCTIONS_CUTLASS = [
     "sgemm_cutlass_autotune_fp16",
     "sgemm_cutlass_autotune_bf16",
     "get_num_cutlass_configs",
+]
+
+FUNCTIONS_HOPPER = [
+    "sgemm_cutlass_hopper_bf16",
+    "sgemm_cutlass_hopper_bf16_tma_warp_specialized_auto",
+    "sgemm_cutlass_hopper_bf16_tma_warp_specialized_constant",
+    "sgemm_cutlass_hopper_bf16_tma_warp_specialized_persistent_constant",
+    "sgemm_cutlass_hopper_bf16_tma_warp_specialized_pingpong_constant",
+    "sgemm_cutlass_hopper_bf16_tma_warp_specialized_streamk_auto",
+    "sgemm_cutlass_hopper_bf16_tma_warp_specialized_streamk_constant",
+    "sgemm_cutlass_hopper_autotune_bf16",
+    "sgemm_cutlass_hopper_fastcu_tma_wgmma_bf16",
+    "sgemm_fastcu_matmul2_manual_tma_wgmma_bf16",
+    "sgemm_cutlass_hopper_fastcu_big_tile_bf16",
+    "sgemm_cutlass_hopper_fastcu_persistent_bf16",
+    "sgemm_cutlass_hopper_fastcu_cluster_bf16",
+    "sgemm_fastcu_handwritten_tma_wgmma_bf16",
+    "sgemm_fastcu_handwritten_cached_tma_maps_bf16",
+    "sgemm_fastcu_final_bf16",
+    "sgemm_fastcu_tma_store_bf16",
+    "sgemm_fastcu_hilbert_final_bf16",
 ]
 
 
@@ -95,6 +132,15 @@ def _find_cutlass_paths() -> list[str]:
     return []
 
 
+def _should_include_hopper() -> bool:
+    if os.environ.get("GEMM_INCLUDE_HOPPER") == "1":
+        return True
+    if not torch.cuda.is_available():
+        return False
+    major, _ = torch.cuda.get_device_capability(0)
+    return major >= 9
+
+
 def create_solution_extension(
     *,
     include_cutlass: bool = False,
@@ -103,7 +149,7 @@ def create_solution_extension(
     """Compile and load the solution extension.
 
     By default this builds files 01-12, which do not require CUTLASS headers.
-    Pass include_cutlass=True to also build files 13-14.
+    Pass include_cutlass=True to also build files 13-26.
     """
 
     file_dir = Path(__file__).resolve().parents[1] / "cuda"
@@ -113,6 +159,8 @@ def create_solution_extension(
     files = list(CUDA_FILES_BASE)
     functions = list(FUNCTIONS_BASE)
     extra_include_paths: list[str] = []
+    extra_cuda_cflags = ["-O3", "-std=c++17"]
+    include_hopper = include_cutlass and _should_include_hopper()
 
     if include_cutlass:
         extra_include_paths = _find_cutlass_paths()
@@ -123,6 +171,10 @@ def create_solution_extension(
             )
         files += CUDA_FILES_CUTLASS
         functions += FUNCTIONS_CUTLASS
+        if include_hopper:
+            files += CUDA_FILES_HOPPER
+            functions += FUNCTIONS_HOPPER
+            extra_cuda_cflags.extend(["-gencode", "arch=compute_90a,code=sm_90a"])
 
     cuda_header = r"""
 #ifdef __CUDA_NO_HALF_OPERATORS__
@@ -140,10 +192,18 @@ def create_solution_extension(
 
 #include <cuda_fp16.h>
 #include <cuda_bf16.h>
+#include <cuda.h>
+#include <cudaTypedefs.h>
+#include <cuda/barrier>
 #include <mma.h>
 #include <cooperative_groups.h>
 #include <cuda/pipeline>
+#include <cstring>
 #include <iostream>
+#include <utility>
+#include <vector>
+#include <string>
+#include <algorithm>
 #include <type_traits>
 namespace cg = cooperative_groups;
 """
@@ -155,6 +215,17 @@ namespace cg = cooperative_groups;
 #include "cutlass/epilogue/thread/linear_combination.h"
 #include "cutlass/layout/matrix.h"
 #include "cutlass/numeric_types.h"
+"""
+
+    if include_hopper:
+        cuda_header += r"""
+#include "cutlass/gemm/device/gemm_universal_adapter.h"
+#include "cutlass/gemm/collective/collective_builder.hpp"
+#include "cutlass/epilogue/collective/collective_builder.hpp"
+#include "cutlass/gemm/kernel/gemm_universal.hpp"
+#include "cutlass/gemm/kernel/tile_scheduler_params.h"
+#include "cutlass/util/packed_stride.hpp"
+#include "cute/tensor.hpp"
 """
 
     cuda_sources = cuda_header + "\n" + utils_code + "\n"
@@ -172,7 +243,8 @@ namespace cg = cooperative_groups;
         with_cuda=True,
         verbose=verbose,
         extra_cflags=["-O3", "-std=c++17"],
-        extra_cuda_cflags=["-O3", "-std=c++17"],
+        extra_cuda_cflags=extra_cuda_cflags,
+        extra_ldflags=["-lcuda"],
         extra_include_paths=extra_include_paths,
         build_directory=str(build_dir),
     )

@@ -25,7 +25,7 @@ __global__ void sgemm_global_mem_coalesce_kernel(int num_rows_a, int num_cols_b,
                                                  float alpha, const float *matrix_a,
                                                  const float *matrix_b, float beta, float *matrix_c)
 {
-    // Map 1D thread ID to 2D output position for coalesced memory access
+    // BLANK A: swap row/col lane mapping so consecutive lanes write consecutive columns.
     const int output_row = blockIdx.x * block_size + GEMM_TODO_INT("Day02: coalesced row offset");
     const int output_col = blockIdx.y * block_size + GEMM_TODO_INT("Day02: coalesced col offset");
 

@@ -113,6 +113,7 @@ __global__ void __launch_bounds__(NUM_THREADS)
     const uint warp_col = warp_idx % (BN / WN);
     const uint warp_row = warp_idx / (BN / WN);
 
+    // BLANK A: derive the per-warp subtile decomposition from WM/WN/TM/TN.
     constexpr uint WMITER = GEMM_TODO_UINT("Day07: derive WMITER from warp tile and thread tile");
     constexpr uint WSUBM = GEMM_TODO_UINT("Day07: derive warp subtile M");
     constexpr uint WSUBN = GEMM_TODO_UINT("Day07: derive warp subtile N");

@@ -24,7 +24,7 @@ __global__ void sgemm_naive_kernel(int num_rows_a, int num_cols_b, int num_cols_
                                    float alpha, const float *matrix_a,
                                    const float *matrix_b, float beta, float *output_matrix)
 {
-    // Map 1D thread ID to 2D output position
+    // BLANK A: map the 1D thread ID to the 2D C element this thread owns.
     const int output_row = blockIdx.x * block_size + GEMM_TODO_INT("Day01: row offset from threadIdx.x");
     const int output_col = blockIdx.y * block_size + GEMM_TODO_INT("Day01: col offset from threadIdx.x");
 
@@ -34,10 +34,12 @@ __global__ void sgemm_naive_kernel(int num_rows_a, int num_cols_b, int num_cols_
         float accumulator = 0.0f;
         for (int k_idx = 0; k_idx < num_cols_a; ++k_idx)
         {
+            // BLANK B: load A[row,k] and B[k,col], then multiply them.
             accumulator += GEMM_TODO_FLOAT("Day01: A[row,k] * B[k,col]");
         }
         // C = α*(A@B)+β*C
         const int output_idx = output_row * num_cols_b + output_col;
+        // BLANK C: apply the alpha/beta epilogue for the output element.
         output_matrix[output_idx] = GEMM_TODO_FLOAT("Day01: alpha * accumulator + beta * C");
     }
 }

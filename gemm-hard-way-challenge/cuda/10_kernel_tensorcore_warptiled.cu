@@ -115,6 +115,7 @@
                     InputType const *a_tile_ptr = tile_a + (a_tile_row * WMMA_M) * BK;
                     InputType const *b_tile_ptr = tile_b + (b_tile_col * WMMA_N) * BK;
 
+                    // BLANK A: load tiled shared-memory fragments and accumulate this WMMA tile.
                     GEMM_TODO_WMMA_LOAD("Day10: load tiled A fragment from shared memory");
                     GEMM_TODO_WMMA_LOAD("Day10: load tiled B fragment from shared memory");
                     GEMM_TODO_WMMA_MMA("Day10: accumulate WMMA tile");

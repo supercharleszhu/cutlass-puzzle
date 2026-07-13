@@ -32,6 +32,7 @@ sgemm_tensorcore_naive_kernel(int num_rows_a, int num_cols_b, int num_cols_a,
                               float *matrix_c)
 {
     // Each warp computes one 16x16 WMMA tile of the output
+    // BLANK A: map the block indices to the WMMA tile row/column.
     const size_t warp_row = GEMM_TODO_INT("Day09: map blockIdx.y to WMMA tile row");
     const size_t warp_col = GEMM_TODO_INT("Day09: map blockIdx.x to WMMA tile col");
 
@@ -47,11 +48,14 @@ sgemm_tensorcore_naive_kernel(int num_rows_a, int num_cols_b, int num_cols_a,
         nvcuda::wmma::fragment<nvcuda::wmma::matrix_b, WMMA_M, WMMA_N, WMMA_K, InputType, nvcuda::wmma::row_major> b_frag;
 
         const InputType *a_ptr = matrix_a + warp_row * num_cols_a + k * WMMA_K;
+        // BLANK B: load the A fragment for this WMMA K tile.
         GEMM_TODO_WMMA_LOAD("Day09: load A WMMA fragment");
 
         const InputType *b_ptr = matrix_b + k * WMMA_K * num_cols_b + warp_col;
+        // BLANK C: load the B fragment for this WMMA K tile.
         GEMM_TODO_WMMA_LOAD("Day09: load B WMMA fragment");
 
+        // BLANK D: issue the tensor-core MMA instruction.
         GEMM_TODO_WMMA_MMA("Day09: tensor-core MMA sync");
     }
 
